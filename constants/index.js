@@ -1,0 +1,2 @@
+export const supabaseUrl = 'https://jpajohnwbsxdtonkrtpj.supabase.co';
+export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwYWpvaG53YnN4ZHRvbmtydHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NDgxODIsImV4cCI6MjA2NTIyNDE4Mn0.cw9gEpLMDa5YrEjTY1FJ9AIP25kIiXB3c7K3RFbW8mk';

@@ -10,7 +10,7 @@ import { theme } from '../constants/theme'
 import Input from '../components/Input'
 import { useRef, useState } from 'react'
 import Button from '../components/Button'
-
+import { supabase } from '../lib/supabase'
 
 const Login = () => {
   const router = useRouter();
@@ -19,9 +19,24 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async ()=>{
-    if (!emailRef.current || !passwordRef.curremt) {
+    if (!emailRef.current || !passwordRef.current) {
       Alert.alert('Login', "Please enter email and password");
       return;
+    }
+
+    let email = emailRef.current.trim();
+    let password = passwordRef.current.trim();
+
+    setLoading(true);
+    const {error} = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    setLoading(false);
+
+    console.log('error: ', error);
+    if (error) {
+      Alert.alert('Login', error.message);
     }
 
     // check valid student email
@@ -53,6 +68,7 @@ const Login = () => {
             icon={<Icon name="mail" size={26} strokeWidth={1.6}/>}
             placeholder='Enter your student email'
             onChangeText={value=> emailRef.current = value}
+            autoCapitalize='none'
           />
 
           <Input
@@ -60,6 +76,7 @@ const Login = () => {
             placeholder='Enter your password'
             secureTextEntry
             onChangeText={value=> passwordRef.current = value}
+            autoCapitalize='none'
           />
 
           <Text style={styles.forgotPassword}>

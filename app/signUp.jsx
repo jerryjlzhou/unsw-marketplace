@@ -1,16 +1,15 @@
+import { useRouter } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+import { useRef, useState } from 'react'
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import ScreenWrapper from '../components/ScreenWrapper'
 import Icon from '../assets/icons'
 import BackButton from '../components/BackButton'
-import { StatusBar } from 'expo-status-bar'
-import { useRouter } from 'expo-router'
-import { wp, hp } from '../helpers/common'
-import { theme } from '../constants/theme'
-import Input from '../components/Input'
-import { useRef, useState } from 'react'
 import Button from '../components/Button'
-
+import Input from '../components/Input'
+import ScreenWrapper from '../components/ScreenWrapper'
+import { theme } from '../constants/theme'
+import { hp, wp } from '../helpers/common'
+import { supabase } from '../lib/supabase'
 
 const SignUp = () => {
   const router = useRouter();
@@ -25,9 +24,24 @@ const SignUp = () => {
       return;
     }
 
-    // check valid student email
+    let name = nameRef.current.trim();
+    let email = emailRef.current.trim();
+    let password = passwordRef.current.trim();
 
-    // good to go
+    setLoading(true);
+
+    const { data: { session }, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } }
+    });
+
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Sign up', error.message);
+    }
+
 
   }
 
@@ -51,22 +65,25 @@ const SignUp = () => {
           </Text>
 
           <Input
-            icon={<Icon name="user" size={26} strokeWidth={1.6}/>}
+            icon={<Icon name="user" size={26} strokeWidth={1.6}/>} 
             placeholder='Enter your name'
             onChangeText={value=> nameRef.current = value}
+            autoCapitalize='none'
           />
 
           <Input
-            icon={<Icon name="mail" size={26} strokeWidth={1.6}/>}
+            icon={<Icon name="mail" size={26} strokeWidth={1.6}/>} 
             placeholder='Enter your student email'
             onChangeText={value=> emailRef.current = value}
+            autoCapitalize='none'
           />
 
           <Input
-            icon={<Icon name="lock" size={26} strokeWidth={1.6}/>}
+            icon={<Icon name="lock" size={26} strokeWidth={1.6}/>} 
             placeholder='Enter your password'
             secureTextEntry
             onChangeText={value=> passwordRef.current = value}
+            autoCapitalize='none'
           />
 
 
