@@ -5,13 +5,19 @@ import BackButtonIcon from './BackButton'
 import MailIcon from './Mail'
 import LockIcon from './Lock'
 import UserIcon from './User'
-
+import HeartIcon from './Heart'
+import PlusIcon from './Plus'
+import LogoutIcon
+ from './Logout'
 const icons = {
     home: HomeIcon,
     backbutton: BackButtonIcon,
     mail: MailIcon,
     lock: LockIcon,
-    user: UserIcon
+    user: UserIcon,
+    heart: HeartIcon,
+    plus: PlusIcon,
+    logout: LogoutIcon,
 }
 
 const Icon = ({ name, size = 24, 
