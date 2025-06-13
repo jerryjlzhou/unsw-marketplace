@@ -1,14 +1,18 @@
-import { StyleSheet } from 'react-native'
 import { theme } from '../../constants/theme'
-import HomeIcon from './Home'
 import BackButtonIcon from './BackButton'
-import MailIcon from './Mail'
-import LockIcon from './Lock'
-import UserIcon from './User'
+import CameraIcon from './Camera'
+import EditIcon from './Edit'
+import EyeOffIcon from './EyeOff'
+import EyeOnIcon from './EyeOn'
+import HatIcon from './Hat'
 import HeartIcon from './Heart'
+import HomeIcon from './Home'
+import LockIcon from './Lock'
+import LogoutIcon from './Logout'
+import MailIcon from './Mail'
 import PlusIcon from './Plus'
-import LogoutIcon
- from './Logout'
+import UserIcon from './User'
+
 const icons = {
     home: HomeIcon,
     backbutton: BackButtonIcon,
@@ -18,6 +22,12 @@ const icons = {
     heart: HeartIcon,
     plus: PlusIcon,
     logout: LogoutIcon,
+    edit: EditIcon,
+    camera: CameraIcon,
+    hat: HatIcon,
+    eyeoff: EyeOffIcon,
+    eyeon: EyeOnIcon
+
 }
 
 const Icon = ({ name, size = 24, 
@@ -25,7 +35,7 @@ const Icon = ({ name, size = 24,
                 color = theme.colors.textLight, 
                 ...props }) => {
 
-    const IconComponent = icons[name];
+    const IconComponent = icons[name && name.toLowerCase()];
     if (!IconComponent) return null;
     return (
         <IconComponent

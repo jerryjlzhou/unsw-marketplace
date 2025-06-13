@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native'
 import React from 'react'
-import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const ScreenWrapper = ({children, bg}) => {
     const {top} = useSafeAreaInsets();

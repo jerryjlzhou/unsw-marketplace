@@ -16,10 +16,12 @@ const SignUp = () => {
   const emailRef = useRef("");
   const nameRef = useRef("");
   const passwordRef = useRef("");
+  const degreeRef = useRef("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async ()=>{
-    if (!emailRef.current || !passwordRef.current || !nameRef.current) {
+    if (!emailRef.current || !passwordRef.current || !nameRef.current || !degreeRef.current) {
       Alert.alert('Sign Up', "Please fill in all fields");
       return;
     }
@@ -27,13 +29,14 @@ const SignUp = () => {
     let name = nameRef.current.trim();
     let email = emailRef.current.trim();
     let password = passwordRef.current.trim();
+    let degree = degreeRef.current.trim();
 
     setLoading(true);
 
     const { data: { session }, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } }
+      options: { data: { name, degree } }
     });
 
     setLoading(false);
@@ -72,6 +75,13 @@ const SignUp = () => {
           />
 
           <Input
+            icon={<Icon name="hat" size={26} strokeWidth={1.6}/>} 
+            placeholder='Enter your degree'
+            onChangeText={value=> degreeRef.current = value}
+            autoCapitalize='words'
+          />
+
+          <Input
             icon={<Icon name="mail" size={26} strokeWidth={1.6}/>} 
             placeholder='Enter your student email'
             onChangeText={value=> emailRef.current = value}
@@ -81,9 +91,14 @@ const SignUp = () => {
           <Input
             icon={<Icon name="lock" size={26} strokeWidth={1.6}/>} 
             placeholder='Enter your password'
-            secureTextEntry
+            secureTextEntry={!showPassword}
             onChangeText={value=> passwordRef.current = value}
             autoCapitalize='none'
+            rightIcon={
+              <Pressable onPress={() => setShowPassword(prev => !prev)}>
+                <Icon name={showPassword ? "eyeOn" : "eyeOff"} size={22} color={theme.colors.textLight} />
+              </Pressable>
+            }
           />
 
 

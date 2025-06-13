@@ -1,12 +1,12 @@
-import { Alert, TouchableOpacity, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import ScreenWrapper from '../../components/ScreenWrapper'
-import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'expo-router'
-import Header from '../../components/Header'
-import { hp, wp } from '../../helpers/common'
+import { Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import Icon from '../../assets/icons'
+import Avatar from '../../components/Avatar'
+import Header from '../../components/Header'
+import ScreenWrapper from '../../components/ScreenWrapper'
 import { theme } from '../../constants/theme'
+import { useAuth } from '../../contexts/AuthContext'
+import { hp, wp } from '../../helpers/common'
 import { supabase } from '../../lib/supabase'
 
 
@@ -48,13 +48,56 @@ const UserHeader = ({user, router, handleLogout}) => {
     return (
         <View style={{flex: 1, backgroundColor: 'white', paddingHorizontal: wp(4)}}>
             <View>
-                <Header title="Profile" showBackButton={true} />
+                <Header title="Profile" mb={30}/>
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                     <Icon name="logout" color={theme.colors.rose} />
-
                 </TouchableOpacity>
             </View>
 
+            <View style={styles.container}>
+                <View style={{gap: 15}}>
+                    <View style={styles.avatarContainer}>
+                        <Avatar 
+                            uri={user?.image}
+                            size={hp(12)}
+                            rounded={theme.radius.xxl*1.4}
+                        />   
+                        <Pressable style={styles.editIcon} onPress={()=> router.push('editProfile')}>
+                            <Icon name="edit" strokeWidth={2.5} size={20}/>
+                        </Pressable>
+                    </View>
+
+                    {/* username and degree / faculty */}
+                    <View style={{alignItems: 'center', gap: 4}}>
+                        <Text style={styles.userName}>{user && user.name}</Text>
+                    </View>
+
+                    {/* email, bio */}
+                    <View style={{gap: 10}}>
+                        <View style={styles.infoRow}>
+                            <Icon name="hat" size={20} color={theme.colors.textLight} />
+                            <Text style={styles.infoText}>
+                                {user && user.degree}
+                            </Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Icon name="mail" size={20} color={theme.colors.textLight} />
+                            <Text style={styles.infoText}>
+                                {user && user.email}
+                            </Text>
+                        </View>
+
+                        {
+                            user && user.bio && (
+                                <Text style={styles.infoText}>{user.bio}</Text>
+                            )
+                        }
+                        
+                    </View>
+
+                </View>
+            </View>
         </View>
     )
 }
@@ -65,7 +108,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     info: {
-        alignItems: 'center',
+        alignItems: 'left',
         gap: 10,
     },
     infoText: {
@@ -88,8 +131,42 @@ const styles = StyleSheet.create({
         fontSize: hp(2),
         textAlign: 'center',
         color: theme.colors.text
-    }
-
-
+    },
+    headerContainer: {
+        marginHorizontal: wp(4),
+        marginBottom: 20,
+    },
+    headerShape: {
+        width: wp(100),
+        height: hp(20),
+    },
+    avatarContainer: {
+        height: hp(12),
+        width: hp(12),
+        alignSelf: 'center',
+    },
+    editIcon: {
+        position: 'absolute',
+        bottom: 0,
+        right: -12,
+        padding: 7,
+        borderRadius: 50,
+        backgroundColor: 'white',
+        shadowColor: theme.colors.textLight,
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.4,
+        shadowRadius: 5,
+        elevation: 7
+    },
+    userName: {
+        fontSize: hp(3),
+        fontWeight: '500',
+        color: theme.colors.text
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
 
 })

@@ -1,15 +1,14 @@
+import { useRouter } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+import { useRef, useState } from 'react'
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import ScreenWrapper from '../components/ScreenWrapper'
 import Icon from '../assets/icons'
 import BackButton from '../components/BackButton'
-import { StatusBar } from 'expo-status-bar'
-import { useRouter } from 'expo-router'
-import { wp, hp } from '../helpers/common'
-import { theme } from '../constants/theme'
-import Input from '../components/Input'
-import { useRef, useState } from 'react'
 import Button from '../components/Button'
+import Input from '../components/Input'
+import ScreenWrapper from '../components/ScreenWrapper'
+import { theme } from '../constants/theme'
+import { hp, wp } from '../helpers/common'
 import { supabase } from '../lib/supabase'
 
 const Login = () => {
@@ -17,6 +16,7 @@ const Login = () => {
   const emailRef = useRef("");
   const passwordRef = useRef("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async ()=>{
     if (!emailRef.current || !passwordRef.current) {
@@ -72,11 +72,16 @@ const Login = () => {
           />
 
           <Input
-            icon={<Icon name="lock" size={26} strokeWidth={1.6}/>}
+            icon={<Icon name="lock" size={26} strokeWidth={1.6}/>} 
             placeholder='Enter your password'
-            secureTextEntry
+            secureTextEntry={!showPassword}
             onChangeText={value=> passwordRef.current = value}
             autoCapitalize='none'
+            rightIcon={
+              <Pressable onPress={() => setShowPassword(prev => !prev)}>
+                <Icon name={showPassword ? "eyeon" : "eyeoff"} size={22} color={theme.colors.textLight} />
+              </Pressable>
+            }
           />
 
           <Text style={styles.forgotPassword}>

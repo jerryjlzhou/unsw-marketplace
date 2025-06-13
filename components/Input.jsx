@@ -1,21 +1,27 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import { theme } from '../constants/theme'
-import { hp } from '../helpers/common'
-import { TextInput } from 'react-native'
+import { StyleSheet, TextInput, View } from 'react-native';
+import { theme } from '../constants/theme';
+import { hp } from '../helpers/common';
 
 const Input = (props) => {
+  // Dynamically set height for multiline inputs if containerStyle is not provided
+  const isMultiline = !!props.multiline;
+  const dynamicStyle = isMultiline && !props.containerStyle ? { minHeight: hp(28), alignItems: 'flex-start' } : {};
   return (
-    <View style={[styles.container, props.containerStyles && props.containerStyles]}>
+    <View style={[styles.container, props.containerStyle, dynamicStyle]}>
         {
             props.icon && props.icon
         }
         <TextInput
-            style={{flex: 1}}
+            style={{flex: 1, textAlignVertical: isMultiline ? 'top' : 'center'}}
             placeholderTextColor={theme.colors.textLight}
             ref={props.inputRef && props.inputRef}
             {...props}
          />
+        {
+            props.rightIcon && (
+                <View style={{marginLeft: 8}}>{props.rightIcon}</View>
+            )
+        }
     </View>
   )
 }
