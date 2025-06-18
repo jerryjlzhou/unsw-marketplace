@@ -1,11 +1,32 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
-import { hp, wp } from '../helpers/common'
-import { theme } from '../constants/theme'
-import Avatar from './Avatar'
+import { Video } from 'expo-av'
+import { Image } from 'expo-image'
 import moment from 'moment'
-import Icon from '../assets/icons'
+import { useRef, useState } from 'react'
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import RenderHTML from 'react-native-render-html'
+import Icon from '../assets/icons'
+import { theme } from '../constants/theme'
+import { hp, wp } from '../helpers/common'
+import { getSupabaseFileUrl } from '../services/imageService'
+import Avatar from './Avatar'
+
+const textStyle = {
+    color: theme.colors.text,
+    fontSize: hp(1.75)
+}
+
+const tagsStyles = {
+    div: textStyle,
+    p: textStyle,
+    ol: textStyle,
+    h1: {
+        color: theme.colors.text,
+    },
+    h4: {
+        color: theme.colors.text,
+    }
+}
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const PostCard = ({
     item,
@@ -28,6 +49,9 @@ const PostCard = ({
     }
 
     const createdAt = moment(item?.created_at).format('MMM D')
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const scrollRef = useRef(null);
+
     return (
         <View style={[styles.container, hasShadow && shadowStyles]}>
             <View style={styles.header}> 
@@ -59,6 +83,63 @@ const PostCard = ({
                         )
                     }
                 </View>
+
+                {/* Post Images and Videos Carousel */}
+                {item?.media && item.media.length > 0 && (
+                  <View style={{alignItems: 'center'}}>
+                    <ScrollView
+                      ref={scrollRef}
+                      horizontal
+                      pagingEnabled
+                      showsHorizontalScrollIndicator={false}
+                      onScroll={e => {
+                        const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                        setCurrentIndex(index);
+                      }}
+                      scrollEventThrottle={16}
+                      style={styles.postMedia}
+                      contentContainerStyle={{alignItems: 'center'}}
+                    >
+                      {item.media
+                        .sort((a, b) => a.sort_index - b.sort_index)
+                        .map((media, idx) => {
+                          const fileUrl = getSupabaseFileUrl(media.uri)?.uri;
+                          return media.media_type === "image" ? (
+                            <Image
+                              key={media.id}
+                              source={{ uri: fileUrl }}
+                              style={[styles.postMedia, {alignSelf: 'center'}]}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <Video
+                              key={media.id}
+                              source={{ uri: fileUrl }}
+                              style={[styles.postMedia, {alignSelf: 'center'}]}
+                              useNativeControls
+                              resizeMode="cover"
+                              isLooping
+                            />
+                          );
+                        })}
+                    </ScrollView>
+                    {/* Dot indicator */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, position: 'absolute', bottom: 10, alignSelf: 'center' }}>
+                      {item.media.map((_, idx) => (
+                        <View
+                          key={idx}
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: 4,
+                            marginHorizontal: 4,
+                            backgroundColor: currentIndex === idx ? theme.colors.text : theme.colors.gray,
+                          }}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
             </View>
         </View>
   )
@@ -104,7 +185,7 @@ const styles = StyleSheet.create({
     },
     postMedia: {
         height: hp(40),
-        width: '100%',
+        width: wp(85),
         borderRadius: theme.radius.xl,
         borderCurve: 'continuous'
     },
