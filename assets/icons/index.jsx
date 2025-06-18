@@ -7,11 +7,14 @@ import EyeOnIcon from './EyeOn'
 import HatIcon from './Hat'
 import HeartIcon from './Heart'
 import HomeIcon from './Home'
+import ImageIcon from './Image'
 import LockIcon from './Lock'
 import LogoutIcon from './Logout'
 import MailIcon from './Mail'
 import PlusIcon from './Plus'
 import UserIcon from './User'
+import VideoIcon from './Video'
+import DeleteIcon from './Delete'
 
 const icons = {
     home: HomeIcon,
@@ -26,8 +29,10 @@ const icons = {
     camera: CameraIcon,
     hat: HatIcon,
     eyeoff: EyeOffIcon,
-    eyeon: EyeOnIcon
-
+    eyeon: EyeOnIcon,
+    image: ImageIcon,
+    video: VideoIcon,
+    delete: DeleteIcon
 }
 
 const Icon = ({ name, size = 24, 

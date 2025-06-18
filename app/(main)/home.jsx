@@ -14,8 +14,6 @@ const Home = () => {
   const {user, setAuth} = useAuth();
   const router = useRouter();
 
-  console.log('user: ', user);
-
   return (
     <ScreenWrapper bg="white">
       <View style={styles.container}>
