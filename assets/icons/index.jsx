@@ -16,6 +16,9 @@ import UserIcon from './User'
 import VideoIcon from './Video'
 import DeleteIcon from './Delete'
 import AlbumIcon from './Album'
+import CommentIcon from './Comment'
+import ShareIcon from './Share'
+import MeatballIcon from './Meatball'
 
 const icons = {
     home: HomeIcon,
@@ -34,7 +37,10 @@ const icons = {
     image: ImageIcon,
     video: VideoIcon,
     delete: DeleteIcon,
-    album: AlbumIcon
+    album: AlbumIcon,
+    comment: CommentIcon,
+    share: ShareIcon,
+    meatball: MeatballIcon
 }
 
 const Icon = ({ name, size = 24, 
