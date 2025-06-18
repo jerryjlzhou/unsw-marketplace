@@ -1,15 +1,14 @@
-import { Alert, Button, StyleSheet, Text, View, Pressable, FlatList } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import Icon from '../../assets/icons'
+import Avatar from '../../components/Avatar'
+import PostCard from '../../components/PostCard'
 import ScreenWrapper from '../../components/ScreenWrapper'
-import { supabase } from '../../lib/supabase'
+import { theme } from '../../constants/theme'
 import { useAuth } from '../../contexts/AuthContext'
 import { hp, wp } from '../../helpers/common'
-import { theme } from '../../constants/theme'
-import Icon from '../../assets/icons'
-import { useRouter } from 'expo-router'
-import Avatar from '../../components/Avatar'
 import { fetchPosts } from '../../services/postService'
-import PostCard from '../../components/PostCard'
 
 
 var limit = 0;
@@ -18,6 +17,7 @@ const Home = () => {
   const {user, setAuth} = useAuth();
   const router = useRouter();
   const [posts, setPosts] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(()=> {
     getPosts();
@@ -35,6 +35,12 @@ const Home = () => {
     }
 
   }
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await getPosts();
+    setRefreshing(false);
+  };
 
   return (
     <ScreenWrapper bg="white">
@@ -74,6 +80,14 @@ const Home = () => {
             item={item}
             currentUser={user}
             router={router}
+            />
+          }
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh} 
+              colors={[theme.colors.gray]} // Android
+              tintColor={theme.colors.gray} // iOS
             />
           }
         />

@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import { useRef, useState } from 'react'
 import { Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import Modal from 'react-native-modal'
+import ImageView from 'react-native-image-viewing'
 import Icon from '../../assets/icons'
 import Avatar from '../../components/Avatar'
 import Button from '../../components/Button'
@@ -28,7 +28,7 @@ const NewPost = () => {
     const [loading, setLoading] = useState(false);
     const [files, setFiles] = useState([]); // array of selected media
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [fullscreenImage, setFullscreenImage] = useState(null);
+    const [fullscreenImageIndex, setFullscreenImageIndex] = useState(null);
 
     const onPick = async () => {
         // No permissions request is necessary for launching the image library
@@ -118,6 +118,9 @@ const NewPost = () => {
         if (newIndex !== currentIndex) setCurrentIndex(newIndex);
     };
 
+    // Prepare images array for ImageView
+    const imagesForViewer = files.filter(f => f.type === 'image').map(f => ({ uri: f.uri }));
+
     return (
         <ScreenWrapper bg="white">
             <View style={[styles.container, { marginBottom: hp(3) }]}> 
@@ -169,7 +172,7 @@ const NewPost = () => {
                                                 isLooping
                                             />
                                         ) : (
-                                            <Pressable style={{flex: 1}} onPress={() => setFullscreenImage(file.uri)}>
+                                            <Pressable style={{flex: 1}} onPress={() => setFullscreenImageIndex(files.filter(f => f.type === 'image').findIndex(f2 => f2.uri === file.uri))}>
                                                 <Image source={{uri: file.uri}} contentFit='cover' style={{flex: 1, borderRadius: theme.radius.xl}} />
                                             </Pressable>
                                         )}
@@ -188,18 +191,19 @@ const NewPost = () => {
                                     />
                                 ))}
                             </View>
+                            {/* Fullscreen image modal with zoom and swipe to close */}
+                            <ImageView
+                                images={imagesForViewer}
+                                imageIndex={fullscreenImageIndex ?? 0}
+                                visible={fullscreenImageIndex !== null}
+                                onRequestClose={() => setFullscreenImageIndex(null)}
+                                swipeToCloseEnabled={true}
+                                doubleTapToZoomEnabled={true}
+                                presentationStyle="overFullScreen"
+                            />
                         </View>
                     )}
                     
-                    {/* Fullscreen image modal */}
-                    <Modal isVisible={!!fullscreenImage} onBackdropPress={() => setFullscreenImage(null)} style={{margin: 0, justifyContent: 'center', alignItems: 'center'}}>
-                        {fullscreenImage && (
-                            <Pressable style={{flex: 1, width: '100%', height: '100%'}} onPress={() => setFullscreenImage(null)}>
-                                <Image source={{uri: fullscreenImage}} style={{width: '100%', height: '100%', resizeMode: 'contain', backgroundColor: 'black'}} />
-                            </Pressable>
-                        )}
-                    </Modal>
-
                     {/* Media picker button */}
                     <View style={{ alignItems: 'center', marginBottom: hp(2.2) }}>
                         <TouchableOpacity

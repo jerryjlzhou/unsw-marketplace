@@ -3,6 +3,7 @@ import { Image } from 'expo-image'
 import moment from 'moment'
 import { useRef, useState } from 'react'
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import ImageView from 'react-native-image-viewing'
 import RenderHTML from 'react-native-render-html'
 import Icon from '../assets/icons'
 import { theme } from '../constants/theme'
@@ -50,7 +51,11 @@ const PostCard = ({
 
     const createdAt = moment(item?.created_at).format('MMM D')
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [fullscreenImageIndex, setFullscreenImageIndex] = useState(null);
     const scrollRef = useRef(null);
+
+    // Prepare images array for ImageView
+    const imagesForViewer = item?.media?.filter(m => m.media_type === 'image').map(m => ({ uri: getSupabaseFileUrl(m.uri)?.uri })) || [];
 
     return (
         <View style={[styles.container, hasShadow && shadowStyles]}>
@@ -104,13 +109,16 @@ const PostCard = ({
                         .sort((a, b) => a.sort_index - b.sort_index)
                         .map((media, idx) => {
                           const fileUrl = getSupabaseFileUrl(media.uri)?.uri;
+                          // Find the index among images only for correct fullscreen
+                          const imageIdx = item.media.filter(m => m.media_type === 'image').findIndex(m => m.id === media.id);
                           return media.media_type === "image" ? (
-                            <Image
-                              key={media.id}
-                              source={{ uri: fileUrl }}
-                              style={[styles.postMedia, {alignSelf: 'center'}]}
-                              resizeMode="cover"
-                            />
+                            <TouchableOpacity key={media.id} activeOpacity={0.9} onPress={() => setFullscreenImageIndex(imageIdx)}>
+                              <Image
+                                source={{ uri: fileUrl }}
+                                style={[styles.postMedia, {alignSelf: 'center'}]}
+                                resizeMode="cover"
+                              />
+                            </TouchableOpacity>
                           ) : (
                             <Video
                               key={media.id}
@@ -123,8 +131,8 @@ const PostCard = ({
                           );
                         })}
                     </ScrollView>
-                    {/* Dot indicator */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, position: 'absolute', bottom: 10, alignSelf: 'center' }}>
+                    {/* Dot indicator BELOW the image carousel */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12, alignSelf: 'center' }}>
                       {item.media.map((_, idx) => (
                         <View
                           key={idx}
@@ -138,6 +146,16 @@ const PostCard = ({
                         />
                       ))}
                     </View>
+                    {/* Fullscreen image modal with zoom and swipe to close */}
+                    <ImageView
+                      images={imagesForViewer}
+                      imageIndex={fullscreenImageIndex ?? 0}
+                      visible={fullscreenImageIndex !== null}
+                      onRequestClose={() => setFullscreenImageIndex(null)}
+                      swipeToCloseEnabled={true}
+                      doubleTapToZoomEnabled={true}
+                      presentationStyle="overFullScreen"
+                    />
                   </View>
                 )}
             </View>
