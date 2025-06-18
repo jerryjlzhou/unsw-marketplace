@@ -15,6 +15,7 @@ import PlusIcon from './Plus'
 import UserIcon from './User'
 import VideoIcon from './Video'
 import DeleteIcon from './Delete'
+import AlbumIcon from './Album'
 
 const icons = {
     home: HomeIcon,
@@ -32,7 +33,8 @@ const icons = {
     eyeon: EyeOnIcon,
     image: ImageIcon,
     video: VideoIcon,
-    delete: DeleteIcon
+    delete: DeleteIcon,
+    album: AlbumIcon
 }
 
 const Icon = ({ name, size = 24, 

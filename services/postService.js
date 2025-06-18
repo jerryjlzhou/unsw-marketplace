@@ -1,32 +1,87 @@
 import { supabase } from "../lib/supabase";
 import { uploadFile } from "./imageService";
 
-export const createOrUpdatePost = async (post)=> {
+// Accepts: { body, userId, file: [array of local media objects], id? }
+export const createOrUpdatePost = async (post) => {
     try {
-        if (post.file && typeof post.file === 'object') {
-            let isImage = post?.file?.type == 'image';
-            let folderName = isImage? 'postImages': 'postVideos';
-            let fileResult = await uploadFile(folderName, post?.file?.uri, isImage);
-            if (fileResult.success) post.file = fileResult.data;
-            else {
-                return fileResult;
+        const { file: files, id, ...postData } = post;
+        let postDataResult;
+        let postError;
+        // 1. Insert or update the post
+        if (id) {
+            // Update existing post
+            const { data, error } = await supabase
+                .from("posts")
+                .update({ ...postData })
+                .eq("id", id)
+                .select()
+                .single();
+            postDataResult = data;
+            postError = error;
+            if (!postError) {
+                // Remove old media rows for this post
+                await supabase.from("post_media").delete().eq("post_id", id);
             }
+        } else {
+            // Create new post
+            const { data, error } = await supabase
+                .from("posts")
+                .insert({ ...postData })
+                .select()
+                .single();
+            postDataResult = data;
+            postError = error;
         }
 
-        const {data, error} = await supabase
-        .from('posts')
-        .upsert(post)
-        .select()
-        .single();
-
-        if (error) {
-            console.log('createPost error: ', error);
-            return {success: false, msg: 'Could not create post'};
+        if (postError) {
+            console.log("createOrUpdatePost error: ", postError);
+            return { success: false, msg: "Could not save post" };
         }
 
-        return {success: true, data: data};
+        // 2. Upload all media in parallel
+        let mediaResults = [];
+        let mediaPayload = [];
+        if (Array.isArray(files) && files.length > 0) {
+            const uploadPromises = files.map(file => {
+                const isImage = file.type === "image";
+                return uploadFile(isImage ? "postImages" : "postVideos", file.uri, isImage);
+            });
+            const uploadResults = await Promise.all(uploadPromises);
+
+            // Check for any failed uploads
+            for (let i = 0; i < uploadResults.length; i++) {
+                if (!uploadResults[i].success) {
+                    // Rollback: delete the post if new, or leave as-is if update
+                    if (!id) {
+                        await supabase.from("posts").delete().eq("id", postDataResult.id);
+                    }
+                    return { success: false, msg: `Failed to upload media: ${uploadResults[i].msg}` };
+                }
+            }
+
+            // Prepare media payload for bulk insert
+            mediaPayload = files.map((file, i) => ({
+                post_id: postDataResult.id,
+                media_type: file.type === "image" ? "image" : "video",
+                sort_index: i,
+                uri: uploadResults[i].data,
+            }));
+            const { error: mediaError } = await supabase
+                .from("post_media")
+                .insert(mediaPayload);
+            if (mediaError) {
+                // Rollback: delete the post if new, or leave as-is if update
+                if (!id) {
+                    await supabase.from("posts").delete().eq("id", postDataResult.id);
+                }
+                return { success: false, msg: "Failed to save media info" };
+            }
+            mediaResults = mediaPayload;
+        }
+
+        return { success: true, data: { ...postDataResult, media: mediaResults || [] } };
     } catch (error) {
-        console.log('createPost error: ', error);
-        return {success: false, msg: 'Could not create post'};
+        console.log("createOrUpdatePost error: ", error);
+        return { success: false, msg: "Could not save post" };
     }
-}
+};

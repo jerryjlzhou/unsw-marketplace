@@ -1,8 +1,10 @@
+import { Video } from 'expo-av'
 import { Image } from 'expo-image'
 import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import { useRef, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native'
+import { Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import Modal from 'react-native-modal'
 import Icon from '../../assets/icons'
 import Avatar from '../../components/Avatar'
 import Button from '../../components/Button'
@@ -13,8 +15,9 @@ import { theme } from '../../constants/theme'
 import { useAuth } from '../../contexts/AuthContext'
 import { hp, wp } from '../../helpers/common'
 import { getSupabaseFileUrl } from '../../services/imageService'
-import { Video } from 'expo-av'
 import { createOrUpdatePost } from '../../services/postService'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const NewPost = () => {
 
@@ -23,21 +26,25 @@ const NewPost = () => {
     const editorRef = useRef(null);
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [file, setFile] = useState(file);
+    const [files, setFiles] = useState([]); // array of selected media
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [fullscreenImage, setFullscreenImage] = useState(null);
 
-    const onPick = async (isImage) => {
+    const onPick = async () => {
         // No permissions request is necessary for launching the image library
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images', 'videos'],
-            allowsEditing: true,
-            aspect: [4, 3],
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsMultipleSelection: true,
+            selectionLimit: 10,
+            allowsEditing: false,
             quality: 1,
         });
 
         console.log('file: ', result.assets[0]);
 
         if (!result.canceled && result.assets && result.assets.length > 0) {
-            setFile(result.assets[0]);
+            setFiles(result.assets);
+            setCurrentIndex(0);
         }
     };
 
@@ -71,13 +78,13 @@ const NewPost = () => {
     }
 
     const onSubmit = async ()=> {
-        if (!bodyRef.current && !file) {
+        if (!bodyRef.current && !files) {
             Alert.alert('Post', "Please add media or text");
             return;
         }
 
         let data = {
-            file, 
+            file: files, 
             body: bodyRef.current,
             userId: user?.id,
         }
@@ -87,7 +94,7 @@ const NewPost = () => {
         setLoading(false);
 
         if (res.success) {
-            setFile(null);
+            setFiles([]);
             bodyRef.current = '';
             editorRef.current?.setContentHTML('');
             router.back();
@@ -96,15 +103,26 @@ const NewPost = () => {
         }
     }
 
+    const removeFile = idx => {
+        setFiles(files => {
+            const newFiles = files.filter((_, i) => i !== idx);
+            if (currentIndex >= newFiles.length) {
+                setCurrentIndex(Math.max(0, newFiles.length - 1));
+            }
+            return newFiles;
+        });
+    };
+
+    const onScroll = (e) => {
+        const newIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+        if (newIndex !== currentIndex) setCurrentIndex(newIndex);
+    };
 
     return (
         <ScreenWrapper bg="white">
-            <View style={styles.container}>
-
+            <View style={[styles.container, { marginBottom: hp(3) }]}> 
                 <Header title="Create Post" />
-
                 <ScrollView contentContainerStyle={{gap: 20}}>
-
                     {/* avatar */}
                     <View style={styles.header}>
                         <Avatar 
@@ -129,47 +147,70 @@ const NewPost = () => {
                         <RichTextEditor editorRef={editorRef} onChange={body=> bodyRef.current = body}/>
                     </View>
 
-                    {
-                        file && (
-                            <View style={styles.file}>
-                                {
-                                    getFileType(file) == 'video' ? (
-                                        <Video 
-                                            style={{flex: 1}}
-                                            source={{
-                                                uri: getFileUri(file)
-                                            }}
-                                            useNativeControls
-                                            contentFit='cover'
-                                            isLooping
-                                        
-                                        />
-                                    ):(
-                                        <Image source={{uri: getFileUri(file)}} contentFit='cover' style={{flex: 1}} />
-                                    )
-                                }
-
-                                <Pressable style={styles.closeIcon} onPress={()=>setFile}>
-                                    <Icon name="delete" size={22} color="white"/>
-                                </Pressable>
+                    {/* Show selected images/videos as a carousel */}
+                    {files.length > 0 && (
+                        <View style={styles.file}>
+                            <ScrollView
+                                horizontal
+                                pagingEnabled
+                                showsHorizontalScrollIndicator={false}
+                                onScroll={onScroll}
+                                scrollEventThrottle={16}
+                                style={{width: SCREEN_WIDTH, height: hp(30)}}
+                            >
+                                {files.map((file, idx) => (
+                                    <View key={idx} style={[styles.file, {width: SCREEN_WIDTH, height: hp(30), position: 'relative'}]}>
+                                        {file.type === 'video' ? (
+                                            <Video 
+                                                style={{flex: 1, borderRadius: theme.radius.xl}}
+                                                source={{ uri: file.uri }}
+                                                useNativeControls
+                                                resizeMode="cover"
+                                                isLooping
+                                            />
+                                        ) : (
+                                            <Pressable style={{flex: 1}} onPress={() => setFullscreenImage(file.uri)}>
+                                                <Image source={{uri: file.uri}} contentFit='cover' style={{flex: 1, borderRadius: theme.radius.xl}} />
+                                            </Pressable>
+                                        )}
+                                        <Pressable style={styles.closeIcon} onPress={() => removeFile(idx)}>
+                                            <Icon name="delete" size={hp(2.7)} color="white"/>
+                                        </Pressable>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                            {/* Dot indicator */}
+                            <View style={{flexDirection: 'row', position: 'absolute', bottom: 10, alignSelf: 'center'}}>
+                                {files.map((_, idx) => (
+                                    <View
+                                        key={idx}
+                                        style={[styles.carousel, { backgroundColor: idx === currentIndex ? theme.colors.text : theme.colors.gray}]}
+                                    />
+                                ))}
                             </View>
-                        )
-                    }
+                        </View>
+                    )}
+                    
+                    {/* Fullscreen image modal */}
+                    <Modal isVisible={!!fullscreenImage} onBackdropPress={() => setFullscreenImage(null)} style={{margin: 0, justifyContent: 'center', alignItems: 'center'}}>
+                        {fullscreenImage && (
+                            <Pressable style={{flex: 1, width: '100%', height: '100%'}} onPress={() => setFullscreenImage(null)}>
+                                <Image source={{uri: fullscreenImage}} style={{width: '100%', height: '100%', resizeMode: 'contain', backgroundColor: 'black'}} />
+                            </Pressable>
+                        )}
+                    </Modal>
 
-                </ScrollView>
-
-                {/* Move media picker here, just above the Post button */}
-                <View style={styles.media}>
-                    <Text style={styles.addImageText}>Add to your post</Text>
-                    <View style={styles.mediaIcons}>
-                        <TouchableOpacity onPress={()=> onPick(true)}>
-                            <Icon name="image" size={30} color={theme.colors.text}/>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={()=> onPick(false)}>
-                            <Icon name="video" size={33} color={theme.colors.text}/>
+                    {/* Media picker button */}
+                    <View style={{ alignItems: 'center', marginBottom: hp(2.2) }}>
+                        <TouchableOpacity
+                            onPress={onPick}
+                            style={styles.addMedia}
+                        >
+                            <Icon name="album" size={hp(3.7)} color={theme.colors.text} />
                         </TouchableOpacity>
                     </View>
-                </View>
+                </ScrollView>
+
 
                 <Button 
                     buttonStyle={{height: hp(6.2)}}
@@ -236,18 +277,18 @@ const styles = StyleSheet.create({
         borderCurve: 'continuous',
         borderColor: theme.colors.gray,
     },
-    mediaIcons: {
-        flexDirection: 'row',
+    addMedia: {
+        backgroundColor: theme.colors.gray,
+        borderRadius: 999,
+        width: wp(13),
+        height: wp(13),
         alignItems: 'center',
-        gap: 15,
-    },
-    addImageText: {
-        fontSize: hp(1.9),
-        fontWeight: theme.fonts.semibold,
-        color: theme.colors.text,
-    },
-    imageIcon: {
-        borderRadius: theme.radius.md,
+        justifyContent: 'center',
+        shadowColor: theme.colors.textLight,
+        shadowOffset: { width: 0, height: hp(0.3) },
+        shadowOpacity: 0.15,
+        shadowRadius: hp(0.7),
+        elevation: 4,
     },
     file: {
         height: hp(30),
@@ -258,10 +299,16 @@ const styles = StyleSheet.create({
     },
     closeIcon: {
         position: 'absolute',
-        top: 10,
-        right: 10,
+        top: hp(1),
+        right: wp(10),
         padding: 7,
         borderRadius: 50,
 
+    },
+    carousel: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginHorizontal: 4,
     }
 })
