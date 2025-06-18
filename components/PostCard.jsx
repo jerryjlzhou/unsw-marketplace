@@ -49,7 +49,9 @@ const PostCard = ({
 
     }
 
-    const createdAt = moment(item?.created_at).format('MMM D')
+    const createdAt = moment(item?.created_at).format('MMM D');
+    const likes = [];
+    const liked = false;
     const [currentIndex, setCurrentIndex] = useState(0);
     const [fullscreenImageIndex, setFullscreenImageIndex] = useState(null);
     const scrollRef = useRef(null);
@@ -131,21 +133,23 @@ const PostCard = ({
                           );
                         })}
                     </ScrollView>
-                    {/* Dot indicator BELOW the image carousel */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12, alignSelf: 'center' }}>
-                      {item.media.map((_, idx) => (
-                        <View
-                          key={idx}
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 4,
-                            marginHorizontal: 4,
-                            backgroundColor: currentIndex === idx ? theme.colors.text : theme.colors.gray,
-                          }}
-                        />
-                      ))}
-                    </View>
+                    {/* Dot scroller below image carousel */}
+                    {item.media.length > 1 && (
+                      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12, alignSelf: 'center' }}>
+                        {item.media.map((_, idx) => (
+                          <View
+                            key={idx}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: 4,
+                              marginHorizontal: 4,
+                              backgroundColor: currentIndex === idx ? theme.colors.text : theme.colors.gray,
+                            }}
+                          />
+                        ))}
+                      </View>
+                    )}
                     {/* Fullscreen image modal with zoom and swipe to close */}
                     <ImageView
                       images={imagesForViewer}
@@ -158,6 +162,33 @@ const PostCard = ({
                     />
                   </View>
                 )}
+            </View>
+
+            {/* Like, Comment and Share */}
+            <View style={styles.footer}>
+                <View style={styles.footerButton}>
+                    <TouchableOpacity>
+                        <Icon name="heart" size={24} fill={liked? theme.colors.rose : 'transparent'} color={liked? theme.colors.rose : theme.colors.text}/>
+                    </TouchableOpacity>
+                    <Text style={styles.count}>
+                        {
+                            likes?.length
+                        }
+                    </Text>
+                    <TouchableOpacity>
+                        <Icon name="comment" size={24} color={theme.colors.text}/>
+                    </TouchableOpacity>
+                    <Text style={styles.count}>
+                        {
+                            0
+                        }
+                    </Text>
+                    <TouchableOpacity>
+                        <Icon name="share" size={24} color={theme.colors.text}/>
+                    </TouchableOpacity>
+                </View>
+
+
             </View>
         </View>
   )
@@ -203,7 +234,7 @@ const styles = StyleSheet.create({
     },
     postMedia: {
         height: hp(40),
-        width: wp(85),
+        width: wp(90),
         borderRadius: theme.radius.xl,
         borderCurve: 'continuous'
     },
@@ -213,13 +244,13 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 15,
+        gap: 20,
     }, 
     footerButton: {
         marginLeft: 5,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4
+        gap: 5
     },
     actions: {
         flexDirection: 'row',

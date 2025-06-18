@@ -183,14 +183,16 @@ const NewPost = () => {
                                 ))}
                             </ScrollView>
                             {/* Dot indicator */}
-                            <View style={{flexDirection: 'row', position: 'absolute', bottom: 10, alignSelf: 'center'}}>
-                                {files.map((_, idx) => (
-                                    <View
-                                        key={idx}
-                                        style={[styles.carousel, { backgroundColor: idx === currentIndex ? theme.colors.text : theme.colors.gray}]}
-                                    />
-                                ))}
-                            </View>
+                            {files.length > 1 && (
+                              <View style={{flexDirection: 'row', position: 'absolute', bottom: 10, alignSelf: 'center'}}>
+                                  {files.map((_, idx) => (
+                                      <View
+                                          key={idx}
+                                          style={[styles.carousel, { backgroundColor: idx === currentIndex ? theme.colors.text : theme.colors.gray}]}
+                                      />
+                                  ))}
+                              </View>
+                            )}
                             {/* Fullscreen image modal with zoom and swipe to close */}
                             <ImageView
                                 images={imagesForViewer}

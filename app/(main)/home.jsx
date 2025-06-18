@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import Icon from '../../assets/icons'
 import Avatar from '../../components/Avatar'
+import Loading from '../../components/Loading'
 import PostCard from '../../components/PostCard'
 import ScreenWrapper from '../../components/ScreenWrapper'
 import { theme } from '../../constants/theme'
@@ -74,14 +75,17 @@ const Home = () => {
         <FlatList 
           data={posts}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listStyle}
+          contentContainerStyle={[styles.listStyle]} 
           keyExtractor={item=> item.id.toString()}
-          renderItem={({item})=> <PostCard 
-            item={item}
-            currentUser={user}
-            router={router}
-            />
-          }
+          renderItem={({item})=> (
+            <View style={{ marginBottom: 10 }}>
+              <PostCard 
+                item={item}
+                currentUser={user}
+                router={router}
+              />
+            </View>
+          )}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 
@@ -89,6 +93,11 @@ const Home = () => {
               colors={[theme.colors.gray]} // Android
               tintColor={theme.colors.gray} // iOS
             />
+          }
+          ListFooterComponent={
+            <View style={{marginVertical: posts.length==0 ? hp(40) : 30}}>
+              <Loading />
+            </View>
           }
         />
       </View>
@@ -130,7 +139,7 @@ const styles = StyleSheet.create({
   },
   listStyle: {
     paddingTop: 20,
-    paddingHorizontal: wp(4),
+    paddingHorizontal: wp(2),
   },
   noPosts: {
     fontSize: hp(2),
