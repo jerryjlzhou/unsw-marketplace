@@ -86,8 +86,11 @@ export const createOrUpdatePost = async (post) => {
     }
 };
 
-export const fetchPosts = async (limit=10) => {
+export const fetchPosts = async (limit = 10, page = 1) => {
     try {
+        // Calculate the range for pagination
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
         const {data, error} = await supabase
         .from("posts")
         .select(`
@@ -96,7 +99,7 @@ export const fetchPosts = async (limit=10) => {
             media: post_media (id, media_type, sort_index, uri)
         `)
         .order('created_at', {ascending: false})
-        .limit(limit);
+        .range(from, to);
 
         if (error) {
             console.log("fetchPosts error: ", error);

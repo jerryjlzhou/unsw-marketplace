@@ -13,23 +13,27 @@ import { supabase } from '../../lib/supabase'
 import { fetchPosts } from '../../services/postService'
 
 var limit = 0;
+var PAGE_SIZE = 10;
 const Home = () => {
 
   const {user, setAuth} = useAuth();
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(()=> {
-    getPosts();
+    getPosts(1, true);
     // Subscribe to posts and post_media changes for real-time updates
     const postsSub = supabase
       .channel('realtime-posts')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, payload => {
-        getPosts();
+        handlePostEvent(payload);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'post_media' }, payload => {
-        getPosts();
+        handlePostMediaEvent(payload);
       })
       .subscribe();
     return () => {
@@ -37,22 +41,86 @@ const Home = () => {
     };
   }, []);
 
-  const getPosts = async ()=> {
 
-    limit = limit + 10;
-    let res = await fetchPosts(limit);
-    console.log('got posts result', res);
-    console.log('user: ', res.data[0].user);
+  const handlePostEvent = (payload) => {
+    const { eventType, new: newPost, old: oldPost } = payload;
+    setPosts(prevPosts => {
+      if (eventType === 'INSERT') {
+        if (prevPosts.some(post => post.id === newPost.id)) return prevPosts;
+        return [newPost, ...prevPosts];
 
+      } else if (eventType === 'UPDATE') {
+        return prevPosts.map(post => post.id === newPost.id ? { ...post, ...newPost } : post);
+
+      } else if (eventType === 'DELETE') {
+        return prevPosts.filter(post => post.id !== oldPost.id);
+      }
+      return prevPosts;
+    });
+  };
+
+  const handlePostMediaEvent = (payload) => {
+    const { eventType, new: newMedia, old: oldMedia } = payload;
+    setPosts(prevPosts => {
+      if (eventType === 'INSERT') {
+        return prevPosts.map(post => {
+          if (post.id === newMedia.post_id) {
+            return {
+              ...post,
+              media: post.media ? [...post.media, newMedia] : [newMedia]
+            };
+          }
+          return post;
+        });
+
+      } else if (eventType === 'UPDATE') {
+        return prevPosts.map(post => {
+          if (post.id === newMedia.post_id) {
+            return {
+              ...post,
+              media: post.media ? post.media.map(m => m.id === newMedia.id ? { ...m, ...newMedia } : m) : [newMedia]
+            };
+          }
+          return post;
+        });
+
+      } else if (eventType === 'DELETE') {
+        return prevPosts.map(post => {
+          if (post.id === oldMedia.post_id) {
+            return {
+              ...post,
+              media: post.media ? post.media.filter(m => m.id !== oldMedia.id) : []
+            };
+          }
+          return post;
+        });
+      }
+      return prevPosts;
+    });
+  };
+
+  const getPosts = async (pageNum = page, reset = false) => {
+    if (loadingMore) return;
+    if (!reset && !hasMore) return;
+    if (reset) setHasMore(true);
+    if (!reset) setLoadingMore(true);
+    let res = await fetchPosts(PAGE_SIZE, pageNum);
     if (res.success) {
-      setPosts(res.data);
+      if (reset) {
+        setPosts(res.data);
+        setPage(2);
+      } else {
+        setPosts(prev => [...prev, ...res.data.filter(post => !prev.some(p => p.id === post.id))]);
+        setPage(pageNum + 1);
+      }
+      if (res.data.length < PAGE_SIZE) setHasMore(false);
     }
-
+    setLoadingMore(false);
   }
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await getPosts();
+    await getPosts(1, true);
     setRefreshing(false);
   };
 
@@ -107,14 +175,18 @@ const Home = () => {
               tintColor={theme.colors.gray} // iOS
             />
           }
+          onEndReached={() => {
+            if (!loadingMore && hasMore) getPosts(page);
+          }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            hasMore || loadingMore ? (
+              <View style={{marginVertical: posts.length==0 ? hp(40) : 30}}>
+                <Loading />
+              </View>
+            ) : null
+          }
         />
-        ListFooterComponent={(
-          <View style={{marginVertical: posts.length==0 ? hp(40) : 30}}>
-            <Loading />
-
-          </View>
-
-        )}
       </View>
     </ScreenWrapper>
   )
