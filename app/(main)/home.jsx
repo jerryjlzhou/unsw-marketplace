@@ -9,8 +9,8 @@ import ScreenWrapper from '../../components/ScreenWrapper'
 import { theme } from '../../constants/theme'
 import { useAuth } from '../../contexts/AuthContext'
 import { hp, wp } from '../../helpers/common'
+import { supabase } from '../../lib/supabase'
 import { fetchPosts } from '../../services/postService'
-
 
 var limit = 0;
 const Home = () => {
@@ -22,6 +22,19 @@ const Home = () => {
 
   useEffect(()=> {
     getPosts();
+    // Subscribe to posts and post_media changes for real-time updates
+    const postsSub = supabase
+      .channel('realtime-posts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, payload => {
+        getPosts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'post_media' }, payload => {
+        getPosts();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(postsSub);
+    };
   }, []);
 
   const getPosts = async ()=> {
@@ -94,12 +107,14 @@ const Home = () => {
               tintColor={theme.colors.gray} // iOS
             />
           }
-          ListFooterComponent={
-            <View style={{marginVertical: posts.length==0 ? hp(40) : 30}}>
-              <Loading />
-            </View>
-          }
         />
+        ListFooterComponent={(
+          <View style={{marginVertical: posts.length==0 ? hp(40) : 30}}>
+            <Loading />
+
+          </View>
+
+        )}
       </View>
     </ScreenWrapper>
   )
